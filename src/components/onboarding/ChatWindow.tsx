@@ -54,7 +54,10 @@ export function ChatWindow() {
         body: JSON.stringify({ messages: newMessages }),
       });
 
-      if (!response.ok) throw new Error("Chat request failed");
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Chat failed (${response.status}): ${errBody}`);
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -89,11 +92,12 @@ export function ChatWindow() {
       }
     } catch (error) {
       console.error("Chat error:", error);
+      const errMsg = error instanceof Error ? error.message : "Unknown error";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
+          content: `Sorry, something went wrong: ${errMsg}`,
         },
       ]);
     } finally {
