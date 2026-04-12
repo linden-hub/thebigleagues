@@ -31,6 +31,11 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Skip redirect logic for API routes — they handle their own auth
+  if (pathname.startsWith("/api/")) {
+    return supabaseResponse;
+  }
+
   // Public routes that don't require auth
   const publicRoutes = ["/", "/login", "/signup"];
   const isPublicRoute = publicRoutes.includes(pathname);
