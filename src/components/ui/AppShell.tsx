@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
           <div className="flex items-center gap-2">
             <ChefHat className="h-6 w-6 text-emerald-600" />
-            <span className="font-bold text-gray-900">PrepDeck</span>
+            <span className="font-bold text-gray-900">PlateMate</span>
           </div>
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {

@@ -8,7 +8,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "PrepDeck — Meal Prep Made Easy",
+  title: "PlateMate — Meal Prep Made Easy",
   description:
     "Swipe through personalized meal prep recipes, build your weekly plan, and get a smart shopping list. Powered by AI.",
 };

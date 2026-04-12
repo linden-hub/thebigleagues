@@ -1,6 +1,6 @@
 import type { Profile } from "./types";
 
-export const ONBOARDING_SYSTEM_PROMPT = `You are PrepDeck's friendly meal prep assistant helping a new user set up their profile. Your goal is to learn about their dietary needs, preferences, and constraints through natural conversation.
+export const ONBOARDING_SYSTEM_PROMPT = `You are PlateMate's friendly meal prep assistant helping a new user set up their profile. Your goal is to learn about their dietary needs, preferences, and constraints through natural conversation.
 
 RULES:
 - Be warm, concise, and conversational

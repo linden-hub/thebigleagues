@@ -76,7 +76,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-4">
             <ChefHat className="h-8 w-8 text-emerald-600" />
-            <span className="text-xl font-bold text-gray-900">PrepDeck</span>
+            <span className="text-xl font-bold text-gray-900">PlateMate</span>
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">
             {isSignup ? "Create your account" : "Welcome back"}
@@ -84,7 +84,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <p className="text-gray-500 mt-1">
             {isSignup
               ? "Start building your personalized meal plans"
-              : "Log in to your PrepDeck account"}
+              : "Log in to your PlateMate account"}
           </p>
         </div>
 

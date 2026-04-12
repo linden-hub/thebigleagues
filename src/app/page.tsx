@@ -18,7 +18,7 @@ export default function LandingPage() {
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-2">
           <ChefHat className="h-8 w-8 text-emerald-600" />
-          <span className="text-xl font-bold text-gray-900">PrepDeck</span>
+          <span className="text-xl font-bold text-gray-900">PlateMate</span>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/login">
@@ -129,7 +129,7 @@ export default function LandingPage() {
             Ready to simplify your meal prep?
           </h2>
           <p className="text-emerald-100 mb-8">
-            Join PrepDeck for free and start building your weekly meal plan
+            Join PlateMate for free and start building your weekly meal plan
             today.
           </p>
           <Link href="/signup">
@@ -145,7 +145,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="px-6 py-6 bg-gray-900 text-gray-400 text-sm text-center">
-        <p>&copy; {new Date().getFullYear()} PrepDeck. Built for the love of good food.</p>
+        <p>&copy; {new Date().getFullYear()} PlateMate. Built for the love of good food.</p>
       </footer>
     </div>
   );
