@@ -41,14 +41,9 @@ export default function LandingPage() {
             and taste. Build your weekly meal plan in minutes and get a smart
             shopping list — no more decision fatigue.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
+          <div className="mt-8 flex items-center justify-center">
             <Link href="/onboarding">
               <Button size="lg">Start meal prepping</Button>
-            </Link>
-            <Link href="#how-it-works">
-              <Button variant="secondary" size="lg">
-                See how it works
-              </Button>
             </Link>
           </div>
         </div>
@@ -114,27 +109,6 @@ export default function LandingPage() {
               description="Go from zero to a full week of meals in under 5 minutes"
             />
           </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="px-6 py-20 bg-emerald-600">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to simplify your meal prep?
-          </h2>
-          <p className="text-emerald-100 mb-8">
-            Join PlateMate for free and start building your weekly meal plan
-            today.
-          </p>
-          <Link href="/onboarding">
-            <Button
-              size="lg"
-              className="bg-white text-emerald-700 hover:bg-emerald-50"
-            >
-              Get started for free
-            </Button>
-          </Link>
         </div>
       </section>
 
