@@ -1,4 +1,4 @@
-import { geminiModelJSON } from "@/lib/gemini";
+import { geminiModelJSON, geminiModelJSONFallback } from "@/lib/gemini";
 import { buildRecipeGenerationPrompt } from "@/lib/prompts";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
@@ -64,8 +64,20 @@ export async function POST() {
   const prompt = buildRecipeGenerationPrompt(profile, swipeHistory);
 
   try {
-    const result = await geminiModelJSON.generateContent(prompt);
-    const text = result.response.text();
+    let text: string;
+    try {
+      const result = await geminiModelJSON.generateContent(prompt);
+      text = result.response.text();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded")) {
+        console.warn("Primary model unavailable, falling back to gemini-2.5-flash");
+        const result = await geminiModelJSONFallback.generateContent(prompt);
+        text = result.response.text();
+      } else {
+        throw error;
+      }
+    }
     const recipes: GeneratedRecipe[] = JSON.parse(text);
 
     // Generate a batch ID

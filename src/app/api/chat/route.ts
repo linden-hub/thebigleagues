@@ -1,7 +1,12 @@
-import { geminiModel } from "@/lib/gemini";
+import { geminiModel, geminiModelFallback } from "@/lib/gemini";
 import { ONBOARDING_SYSTEM_PROMPT } from "@/lib/prompts";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
+
+function isServiceUnavailable(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded");
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,16 +34,33 @@ export async function POST(req: NextRequest) {
       parts: [{ text: msg.content }],
     }));
 
-    const chat = geminiModel.startChat({
-      history,
-      systemInstruction: {
-        role: "user",
-        parts: [{ text: ONBOARDING_SYSTEM_PROMPT }],
-      },
-    });
-
     const lastMessage = messages[messages.length - 1];
-    const result = await chat.sendMessageStream(lastMessage.content);
+
+    let result;
+    try {
+      const chat = geminiModel.startChat({
+        history,
+        systemInstruction: {
+          role: "user",
+          parts: [{ text: ONBOARDING_SYSTEM_PROMPT }],
+        },
+      });
+      result = await chat.sendMessageStream(lastMessage.content);
+    } catch (error) {
+      if (isServiceUnavailable(error)) {
+        console.warn("Primary model unavailable, falling back to gemini-2.5-flash");
+        const chat = geminiModelFallback.startChat({
+          history,
+          systemInstruction: {
+            role: "user",
+            parts: [{ text: ONBOARDING_SYSTEM_PROMPT }],
+          },
+        });
+        result = await chat.sendMessageStream(lastMessage.content);
+      } else {
+        throw error;
+      }
+    }
 
     // Stream the response
     const encoder = new TextEncoder();

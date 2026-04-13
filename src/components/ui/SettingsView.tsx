@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Save, LogOut, RotateCcw } from "lucide-react";
+import { Save, RotateCcw } from "lucide-react";
 import type { Profile } from "@/lib/types";
 
 export function SettingsView() {
@@ -65,12 +65,6 @@ export function SettingsView() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
-  }
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
   }
 
   function updateArrayField(field: keyof Profile, value: string) {
@@ -252,13 +246,6 @@ export function SettingsView() {
         </div>
       </form>
 
-      {/* Logout */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <Button variant="danger" onClick={handleLogout}>
-          <LogOut className="h-4 w-4 mr-1" />
-          Log out
-        </Button>
-      </div>
     </div>
   );
 }

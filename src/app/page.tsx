@@ -20,14 +20,9 @@ export default function LandingPage() {
           <ChefHat className="h-8 w-8 text-emerald-600" />
           <span className="text-xl font-bold text-gray-900">PlateMate</span>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/login">
-            <Button variant="ghost">Log in</Button>
-          </Link>
-          <Link href="/signup">
-            <Button>Get Started</Button>
-          </Link>
-        </div>
+        <Link href="/onboarding">
+          <Button>Get Started</Button>
+        </Link>
       </nav>
 
       {/* Hero */}
@@ -47,7 +42,7 @@ export default function LandingPage() {
             shopping list — no more decision fatigue.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
-            <Link href="/signup">
+            <Link href="/onboarding">
               <Button size="lg">Start meal prepping</Button>
             </Link>
             <Link href="#how-it-works">
@@ -132,7 +127,7 @@ export default function LandingPage() {
             Join PlateMate for free and start building your weekly meal plan
             today.
           </p>
-          <Link href="/signup">
+          <Link href="/onboarding">
             <Button
               size="lg"
               className="bg-white text-emerald-700 hover:bg-emerald-50"

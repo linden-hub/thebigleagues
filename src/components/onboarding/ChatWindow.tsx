@@ -20,9 +20,12 @@ export function ChatWindow() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [profileData, setProfileData] = useState<Record<string, unknown> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const hasSentGreeting = useRef(false);
 
   // Send initial greeting on mount
   useEffect(() => {
+    if (hasSentGreeting.current) return;
+    hasSentGreeting.current = true;
     sendMessage("Hi! I'm ready to set up my meal prep profile.", true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -158,11 +161,12 @@ export function ChatWindow() {
       <div className="flex-1 overflow-y-auto py-4">
         {messages
           .filter((m) => !(m.role === "user" && messages.indexOf(m) === 0))
+          .filter((m) => !(m.role === "assistant" && m.content === ""))
           .map((message, idx) => (
             <ChatMessage key={idx} message={message} />
           ))}
 
-        {isStreaming && messages[messages.length - 1]?.content === "" && (
+        {isStreaming && (messages[messages.length - 1]?.role === "user" || messages[messages.length - 1]?.content === "") && (
           <div className="flex gap-3 px-4 py-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
               <Loader2 className="h-4 w-4 text-emerald-600 animate-spin" />

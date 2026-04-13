@@ -11,6 +11,13 @@ interface ChatMessageProps {
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
 
+  // Strip JSON code blocks from assistant messages (profile data is shown in the confirmation card)
+  const displayContent = !isUser
+    ? message.content.replace(/```json[\s\S]*?```/g, "").trim()
+    : message.content;
+
+  if (!isUser && !displayContent) return null;
+
   return (
     <div
       className={cn("flex gap-3 px-4 py-3", isUser ? "justify-end" : "")}
@@ -28,7 +35,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
             : "bg-white border border-gray-200 text-gray-700"
         )}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        <p className="whitespace-pre-wrap">{displayContent}</p>
       </div>
       {isUser && (
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">

@@ -1,4 +1,4 @@
-import { geminiModelJSON } from "@/lib/gemini";
+import { geminiModelJSON, geminiModelJSONFallback } from "@/lib/gemini";
 import { buildShoppingListPrompt } from "@/lib/prompts";
 import { createClient } from "@/lib/supabase/server";
 import { getWeekStart } from "@/lib/utils";
@@ -51,8 +51,20 @@ export async function POST(req: NextRequest) {
   );
 
   try {
-    const result = await geminiModelJSON.generateContent(prompt);
-    const text = result.response.text();
+    let text: string;
+    try {
+      const result = await geminiModelJSON.generateContent(prompt);
+      text = result.response.text();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded")) {
+        console.warn("Primary model unavailable, falling back to gemini-2.5-flash");
+        const result = await geminiModelJSONFallback.generateContent(prompt);
+        text = result.response.text();
+      } else {
+        throw error;
+      }
+    }
     const items: { ingredient_name: string; amount: string; category: string }[] =
       JSON.parse(text);
 
