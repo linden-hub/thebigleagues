@@ -41,31 +41,46 @@ export async function updateSession(request: NextRequest) {
     const { data } = await withTimeout(supabase.auth.getUser(), SUPABASE_TIMEOUT_MS);
     user = data.user;
   } catch {
-    // If auth check times out, let the request through without redirects
+    // If auth check times out, let the request through
     return supabaseResponse;
   }
 
   const { pathname } = request.nextUrl;
 
-  // Skip redirect logic for API routes — they handle their own auth
+  // Skip for API routes — they handle their own auth
   if (pathname.startsWith("/api/")) {
     return supabaseResponse;
   }
 
-  // Public routes that don't require auth
-  const publicRoutes = ["/", "/login", "/signup"];
-  const isPublicRoute = publicRoutes.includes(pathname);
-
-  // If user is not authenticated and trying to access protected routes, send to onboarding
-  if (!user && !isPublicRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/signup";
-    return NextResponse.redirect(url);
+  // Landing page doesn't need a session
+  if (pathname === "/") {
+    return supabaseResponse;
   }
 
-  // If user is authenticated
+  // Auto-create anonymous session for all other routes if no user
+  if (!user) {
+    try {
+      const { data, error } = await withTimeout(
+        supabase.auth.signInAnonymously(),
+        SUPABASE_TIMEOUT_MS
+      );
+      if (error) {
+        console.error("Anonymous sign-in failed:", error.message);
+        const url = request.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+      user = data.user;
+    } catch {
+      // On timeout, redirect to landing
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Check if onboarding is complete
   if (user) {
-    // Check if onboarding is complete
     let onboardingComplete = false;
     try {
       const result = await withTimeout(
@@ -80,24 +95,13 @@ export async function updateSession(request: NextRequest) {
       );
       onboardingComplete = result.data?.onboarding_complete ?? false;
     } catch {
-      // If profile check times out, let the request through
       return supabaseResponse;
     }
 
     // Redirect to onboarding if not complete (unless already there)
-    if (!onboardingComplete && pathname !== "/onboarding" && !isPublicRoute) {
+    if (!onboardingComplete && pathname !== "/onboarding") {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
-    }
-
-    // Redirect away from auth pages if logged in
-    if (
-      (pathname === "/login" || pathname === "/signup") &&
-      onboardingComplete
-    ) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/app";
       return NextResponse.redirect(url);
     }
   }
