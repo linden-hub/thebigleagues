@@ -1,10 +1,120 @@
 "use client";
 
-import { useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Clock, Flame, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, Flame, DollarSign } from "lucide-react";
 import type { Recipe } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+
+interface CuisineTheme {
+  emoji: string;
+  gradientFrom: string;
+  gradientTo: string;
+  accentBg: string;
+  accentText: string;
+}
+
+const CUISINE_THEMES: Record<string, CuisineTheme> = {
+  thai: {
+    emoji: "\u{1F35C}",
+    gradientFrom: "#fbbf24",
+    gradientTo: "#f97316",
+    accentBg: "bg-amber-50",
+    accentText: "text-amber-700",
+  },
+  italian: {
+    emoji: "\u{1F35D}",
+    gradientFrom: "#f87171",
+    gradientTo: "#f43f5e",
+    accentBg: "bg-rose-50",
+    accentText: "text-rose-700",
+  },
+  mexican: {
+    emoji: "\u{1F32E}",
+    gradientFrom: "#a3e635",
+    gradientTo: "#10b981",
+    accentBg: "bg-lime-50",
+    accentText: "text-lime-700",
+  },
+  japanese: {
+    emoji: "\u{1F371}",
+    gradientFrom: "#f472b6",
+    gradientTo: "#d946ef",
+    accentBg: "bg-pink-50",
+    accentText: "text-pink-700",
+  },
+  indian: {
+    emoji: "\u{1F35B}",
+    gradientFrom: "#facc15",
+    gradientTo: "#f97316",
+    accentBg: "bg-yellow-50",
+    accentText: "text-yellow-700",
+  },
+  chinese: {
+    emoji: "\u{1F961}",
+    gradientFrom: "#ef4444",
+    gradientTo: "#fbbf24",
+    accentBg: "bg-red-50",
+    accentText: "text-red-700",
+  },
+  mediterranean: {
+    emoji: "\u{1FAD2}",
+    gradientFrom: "#38bdf8",
+    gradientTo: "#3b82f6",
+    accentBg: "bg-sky-50",
+    accentText: "text-sky-700",
+  },
+  korean: {
+    emoji: "\u{1F958}",
+    gradientFrom: "#fb7185",
+    gradientTo: "#ef4444",
+    accentBg: "bg-rose-50",
+    accentText: "text-rose-700",
+  },
+  american: {
+    emoji: "\u{1F354}",
+    gradientFrom: "#60a5fa",
+    gradientTo: "#6366f1",
+    accentBg: "bg-blue-50",
+    accentText: "text-blue-700",
+  },
+  french: {
+    emoji: "\u{1F950}",
+    gradientFrom: "#a78bfa",
+    gradientTo: "#a855f7",
+    accentBg: "bg-violet-50",
+    accentText: "text-violet-700",
+  },
+  vietnamese: {
+    emoji: "\u{1F372}",
+    gradientFrom: "#2dd4bf",
+    gradientTo: "#06b6d4",
+    accentBg: "bg-teal-50",
+    accentText: "text-teal-700",
+  },
+  greek: {
+    emoji: "\u{1F957}",
+    gradientFrom: "#22d3ee",
+    gradientTo: "#3b82f6",
+    accentBg: "bg-cyan-50",
+    accentText: "text-cyan-700",
+  },
+};
+
+const DEFAULT_THEME: CuisineTheme = {
+  emoji: "\u{1F37D}\u{FE0F}",
+  gradientFrom: "#34d399",
+  gradientTo: "#14b8a6",
+  accentBg: "bg-emerald-50",
+  accentText: "text-emerald-700",
+};
+
+function getCuisineTheme(cuisine: string): CuisineTheme {
+  const normalized = cuisine.toLowerCase().trim();
+  for (const [key, theme] of Object.entries(CUISINE_THEMES)) {
+    if (normalized.includes(key)) return theme;
+  }
+  return DEFAULT_THEME;
+}
 
 interface SwipeCardProps {
   recipe: Recipe;
@@ -13,11 +123,18 @@ interface SwipeCardProps {
 }
 
 export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
-  const [expanded, setExpanded] = useState(false);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
   const likeOpacity = useTransform(x, [0, 100], [0, 1]);
   const skipOpacity = useTransform(x, [-100, 0], [1, 0]);
+
+  const theme = getCuisineTheme(recipe.cuisine);
+
+  const totalMacroCals =
+    recipe.protein * 4 + recipe.carbs * 4 + recipe.fat * 9 || 1;
+  const proteinPct = ((recipe.protein * 4) / totalMacroCals) * 100;
+  const carbsPct = ((recipe.carbs * 4) / totalMacroCals) * 100;
+  const fatPct = ((recipe.fat * 9) / totalMacroCals) * 100;
 
   function handleDragEnd(
     _: unknown,
@@ -43,13 +160,13 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
       exit={{ x: x.get() > 0 ? 300 : -300, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-lg overflow-hidden h-full flex flex-col cursor-grab">
+      <div className="rounded-3xl overflow-hidden h-full flex flex-col cursor-grab shadow-xl">
         {/* Swipe overlays */}
         <motion.div
           className="absolute inset-0 bg-emerald-500/20 rounded-3xl z-10 flex items-center justify-center pointer-events-none"
           style={{ opacity: likeOpacity }}
         >
-          <div className="bg-emerald-500 text-white px-6 py-2 rounded-xl text-2xl font-bold rotate-[-15deg]">
+          <div className="bg-emerald-500 text-white px-8 py-3 rounded-xl text-3xl font-bold rotate-[-15deg]">
             ADD
           </div>
         </motion.div>
@@ -57,120 +174,105 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
           className="absolute inset-0 bg-red-500/20 rounded-3xl z-10 flex items-center justify-center pointer-events-none"
           style={{ opacity: skipOpacity }}
         >
-          <div className="bg-red-500 text-white px-6 py-2 rounded-xl text-2xl font-bold rotate-[15deg]">
+          <div className="bg-red-500 text-white px-8 py-3 rounded-xl text-3xl font-bold rotate-[15deg]">
             SKIP
           </div>
         </motion.div>
 
-        {/* Recipe header */}
-        <div className="p-6 flex-shrink-0">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 leading-tight">
-                {recipe.title}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">{recipe.description}</p>
+        {/* Hero zone with gradient */}
+        <div
+          className="relative flex-shrink-0 h-[200px] flex items-center justify-center"
+          style={{
+            background: `linear-gradient(135deg, ${theme.gradientFrom}, ${theme.gradientTo})`,
+          }}
+        >
+          {/* Difficulty badge */}
+          <span className="absolute top-4 right-4 bg-white/25 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full capitalize">
+            {recipe.difficulty}
+          </span>
+
+          {/* Emoji circle */}
+          <div className="bg-white/20 backdrop-blur-sm rounded-full w-20 h-20 flex items-center justify-center text-5xl">
+            {theme.emoji}
+          </div>
+
+          {/* Title overlay at bottom of hero */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-5 pb-4 pt-10">
+            <h2 className="text-xl md:text-2xl font-bold text-white leading-tight line-clamp-2 drop-shadow-lg">
+              {recipe.title}
+            </h2>
+          </div>
+        </div>
+
+        {/* Content zone */}
+        <div className="bg-white flex flex-col flex-1 px-5 pt-4 pb-5">
+          {/* Description */}
+          <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+            {recipe.description}
+          </p>
+
+          {/* Stat pills */}
+          <div className="flex gap-2 mt-4">
+            <div className="flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1.5">
+              <Clock className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">
+                {recipe.prep_time + recipe.cook_time} min
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1.5">
+              <Flame className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">
+                {recipe.calories} cal
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1.5">
+              <DollarSign className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">
+                {formatCurrency(recipe.cost_per_serving)}
+              </span>
             </div>
           </div>
 
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">
+          {/* Macro bar */}
+          <div className="mt-4">
+            <div className="flex rounded-full h-2.5 overflow-hidden bg-gray-100">
+              <div
+                className="bg-emerald-400 transition-all"
+                style={{ width: `${proteinPct}%` }}
+              />
+              <div
+                className="bg-amber-400 transition-all"
+                style={{ width: `${carbsPct}%` }}
+              />
+              <div
+                className="bg-rose-400 transition-all"
+                style={{ width: `${fatPct}%` }}
+              />
+            </div>
+            <div className="flex gap-4 mt-1.5 text-xs text-gray-500">
+              <span>
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-1" />
+                P: {recipe.protein}g
+              </span>
+              <span>
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1" />
+                C: {recipe.carbs}g
+              </span>
+              <span>
+                <span className="inline-block w-2 h-2 rounded-full bg-rose-400 mr-1" />
+                F: {recipe.fat}g
+              </span>
+            </div>
+          </div>
+
+          {/* Cuisine tag at bottom */}
+          <div className="mt-auto pt-3">
+            <span
+              className={`${theme.accentBg} ${theme.accentText} text-xs font-semibold px-3 py-1 rounded-full`}
+            >
               {recipe.cuisine}
             </span>
-            <span className="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-full">
-              {recipe.difficulty}
-            </span>
           </div>
-        </div>
-
-        {/* Quick stats */}
-        <div className="grid grid-cols-3 gap-3 px-6 pb-4">
-          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-            <Clock className="h-4 w-4 text-gray-400" />
-            <span>{recipe.prep_time + recipe.cook_time}m</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-            <Flame className="h-4 w-4 text-gray-400" />
-            <span>{recipe.calories} cal</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-            <DollarSign className="h-4 w-4 text-gray-400" />
-            <span>{formatCurrency(recipe.cost_per_serving)}</span>
-          </div>
-        </div>
-
-        {/* Macros bar */}
-        <div className="px-6 pb-4">
-          <div className="flex gap-4 text-xs">
-            <div className="flex-1 text-center">
-              <div className="font-semibold text-gray-900">{recipe.protein}g</div>
-              <div className="text-gray-400">Protein</div>
-            </div>
-            <div className="flex-1 text-center">
-              <div className="font-semibold text-gray-900">{recipe.carbs}g</div>
-              <div className="text-gray-400">Carbs</div>
-            </div>
-            <div className="flex-1 text-center">
-              <div className="font-semibold text-gray-900">{recipe.fat}g</div>
-              <div className="text-gray-400">Fat</div>
-            </div>
-            <div className="flex-1 text-center">
-              <div className="font-semibold text-gray-900">{recipe.servings}</div>
-              <div className="text-gray-400">Servings</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Expandable details */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
-          <button
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-sm text-emerald-600 font-medium mb-2"
-          >
-            {expanded ? (
-              <>
-                Hide details <ChevronUp className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                View full recipe <ChevronDown className="h-4 w-4" />
-              </>
-            )}
-          </button>
-
-          {expanded && (
-            <div className="space-y-4 text-sm">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  Ingredients
-                </h4>
-                <ul className="space-y-1">
-                  {recipe.ingredients.map((ing, i) => (
-                    <li key={i} className="text-gray-600">
-                      {ing.amount} {ing.unit} {ing.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  Instructions
-                </h4>
-                <ol className="space-y-2">
-                  {recipe.instructions.map((step, i) => (
-                    <li key={i} className="text-gray-600">
-                      <span className="font-medium text-gray-800">
-                        {i + 1}.
-                      </span>{" "}
-                      {step}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </motion.div>

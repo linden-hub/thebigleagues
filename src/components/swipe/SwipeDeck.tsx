@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SwipeCard } from "./SwipeCard";
 import { Button } from "@/components/ui/Button";
 import { useRecipes } from "@/hooks/useRecipes";
@@ -88,17 +88,25 @@ export function SwipeDeck() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-5">
       {/* Card stack */}
-      <div className="relative w-full max-w-sm h-[520px]">
+      <div className="relative w-full max-w-sm md:max-w-lg h-[540px] mx-4">
         <AnimatePresence>
           {nextRecipe && (
-            <SwipeCard
-              key={nextRecipe.id}
-              recipe={nextRecipe}
-              onSwipe={() => {}}
-              isTop={false}
-            />
+            <motion.div
+              key={`bg-${nextRecipe.id}`}
+              className="absolute inset-0"
+              initial={{ scale: 0.95, y: 10 }}
+              animate={{ scale: 0.95, y: 10 }}
+              style={{ zIndex: 0 }}
+            >
+              <SwipeCard
+                key={nextRecipe.id}
+                recipe={nextRecipe}
+                onSwipe={() => {}}
+                isTop={false}
+              />
+            </motion.div>
           )}
           {topRecipe && (
             <SwipeCard
@@ -112,18 +120,20 @@ export function SwipeDeck() {
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-5">
         <button
           onClick={() => onSwipe("left")}
-          className="w-14 h-14 rounded-full border-2 border-red-300 flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+          aria-label="Skip recipe"
+          className="w-16 h-16 rounded-full bg-white shadow-lg shadow-red-100 flex items-center justify-center text-red-500 hover:bg-red-50 active:scale-95 transition-all"
         >
-          <X className="h-6 w-6" />
+          <X className="h-7 w-7" />
         </button>
         <button
           onClick={() => onSwipe("right")}
-          className="w-14 h-14 rounded-full border-2 border-emerald-300 flex items-center justify-center text-emerald-500 hover:bg-emerald-50 transition-colors"
+          aria-label="Add recipe to meal plan"
+          className="w-16 h-16 rounded-full bg-white shadow-lg shadow-emerald-100 flex items-center justify-center text-emerald-500 hover:bg-emerald-50 active:scale-95 transition-all"
         >
-          <Heart className="h-6 w-6" />
+          <Heart className="h-7 w-7" />
         </button>
       </div>
 

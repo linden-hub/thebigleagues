@@ -1,6 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Supabase request timed out")), ms)
+    ),
+  ]);
+}
+
+const SUPABASE_TIMEOUT_MS = 10_000;
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -25,9 +36,14 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user;
+  try {
+    const { data } = await withTimeout(supabase.auth.getUser(), SUPABASE_TIMEOUT_MS);
+    user = data.user;
+  } catch {
+    // If auth check times out, let the request through without redirects
+    return supabaseResponse;
+  }
 
   const { pathname } = request.nextUrl;
 
@@ -50,13 +66,23 @@ export async function updateSession(request: NextRequest) {
   // If user is authenticated
   if (user) {
     // Check if onboarding is complete
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_complete")
-      .eq("id", user.id)
-      .single();
-
-    const onboardingComplete = profile?.onboarding_complete ?? false;
+    let onboardingComplete = false;
+    try {
+      const result = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from("profiles")
+            .select("onboarding_complete")
+            .eq("id", user.id)
+            .maybeSingle()
+        ),
+        SUPABASE_TIMEOUT_MS
+      );
+      onboardingComplete = result.data?.onboarding_complete ?? false;
+    } catch {
+      // If profile check times out, let the request through
+      return supabaseResponse;
+    }
 
     // Redirect to onboarding if not complete (unless already there)
     if (!onboardingComplete && pathname !== "/onboarding" && !isPublicRoute) {

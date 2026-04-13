@@ -36,6 +36,17 @@ export async function POST(req: NextRequest) {
 
     const lastMessage = messages[messages.length - 1];
 
+    const GEMINI_TIMEOUT_MS = 30_000;
+
+    function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+      return Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Gemini request timed out")), ms)
+        ),
+      ]);
+    }
+
     let result;
     try {
       const chat = geminiModel.startChat({
@@ -45,7 +56,7 @@ export async function POST(req: NextRequest) {
           parts: [{ text: ONBOARDING_SYSTEM_PROMPT }],
         },
       });
-      result = await chat.sendMessageStream(lastMessage.content);
+      result = await withTimeout(chat.sendMessageStream(lastMessage.content), GEMINI_TIMEOUT_MS);
     } catch (error) {
       if (isServiceUnavailable(error)) {
         console.warn("Primary model unavailable, falling back to gemini-2.5-flash");
@@ -56,7 +67,7 @@ export async function POST(req: NextRequest) {
             parts: [{ text: ONBOARDING_SYSTEM_PROMPT }],
           },
         });
-        result = await chat.sendMessageStream(lastMessage.content);
+        result = await withTimeout(chat.sendMessageStream(lastMessage.content), GEMINI_TIMEOUT_MS);
       } else {
         throw error;
       }
