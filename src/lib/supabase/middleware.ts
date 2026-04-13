@@ -53,13 +53,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Public routes that don't require auth
-  const publicRoutes = ["/", "/login", "/signup", "/onboarding"];
+  const publicRoutes = ["/", "/login", "/signup"];
   const isPublicRoute = publicRoutes.includes(pathname);
 
   // If user is not authenticated and trying to access protected routes, send to onboarding
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/onboarding";
+    url.pathname = "/signup";
     return NextResponse.redirect(url);
   }
 
