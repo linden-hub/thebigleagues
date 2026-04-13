@@ -79,6 +79,14 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface OnboardingMessage {
+  id: string;
+  user_id: string;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
 export interface GeneratedRecipe {
   title: string;
   description: string;

@@ -60,23 +60,37 @@ export async function POST() {
     };
   }
 
-  // Generate recipes with Gemini
+  // Generate recipes with Gemini (with retry for 503 errors)
   const prompt = buildRecipeGenerationPrompt(profile, swipeHistory);
 
   try {
     let text: string;
-    try {
-      const result = await geminiModelJSON.generateContent(prompt);
-      text = result.response.text();
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded")) {
-        console.warn("Primary model unavailable, falling back to gemini-2.5-flash");
-        const result = await geminiModelJSONFallback.generateContent(prompt);
-        text = result.response.text();
-      } else {
-        throw error;
+
+    const models = [geminiModelJSON, geminiModelJSONFallback];
+    const maxRetries = 3;
+    let lastError: unknown;
+
+    outer: {
+      for (const model of models) {
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+          try {
+            const result = await model.generateContent(prompt);
+            text = result.response.text();
+            break outer;
+          } catch (err) {
+            lastError = err;
+            const msg = err instanceof Error ? err.message : String(err);
+            const isRetryable = msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded") || msg.includes("429");
+            if (!isRetryable) throw err;
+            console.warn(`Model attempt ${attempt + 1} failed (retryable), waiting before retry...`);
+            if (attempt < maxRetries - 1) {
+              await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+            }
+          }
+        }
       }
+      // All retries exhausted
+      throw lastError;
     }
     const recipes: GeneratedRecipe[] = JSON.parse(text);
 

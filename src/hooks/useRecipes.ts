@@ -9,6 +9,7 @@ export function useRecipes() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [totalSwiped, setTotalSwiped] = useState(0);
 
   // Fetch unswiped recipes
@@ -51,15 +52,20 @@ export function useRecipes() {
   // Generate a new batch
   const generateBatch = useCallback(async () => {
     setGenerating(true);
+    setError(null);
     try {
       const response = await fetch("/api/recipes/generate", {
         method: "POST",
       });
-      if (!response.ok) throw new Error("Generation failed");
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Generation failed");
+      }
       const { recipes: newRecipes } = await response.json();
       setRecipes((prev) => [...prev, ...newRecipes]);
-    } catch (error) {
-      console.error("Failed to generate recipes:", error);
+    } catch (err) {
+      console.error("Failed to generate recipes:", err);
+      setError(err instanceof Error ? err.message : "Failed to generate recipes");
     } finally {
       setGenerating(false);
     }
@@ -107,6 +113,7 @@ export function useRecipes() {
     recipes,
     loading,
     generating,
+    error,
     totalSwiped,
     handleSwipe,
     generateBatch,

@@ -20,10 +20,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Top nav - desktop */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <ChefHat className="h-6 w-6 text-emerald-600" />
             <span className="font-bold text-gray-900">PlateMate</span>
-          </div>
+          </Link>
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;

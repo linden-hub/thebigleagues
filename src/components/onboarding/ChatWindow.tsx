@@ -18,15 +18,64 @@ export function ChatWindow() {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [profileData, setProfileData] = useState<Record<string, unknown> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const hasSentGreeting = useRef(false);
+  const hasInitialized = useRef(false);
 
-  // Send initial greeting on mount
+  // Persist a single message to Supabase (fire-and-forget)
+  function persistMessage(role: "user" | "assistant", content: string) {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("onboarding_messages").insert({
+        user_id: user.id,
+        role,
+        content,
+      }).then(({ error }) => {
+        if (error) console.error("Failed to persist message:", error);
+      });
+    });
+  }
+
+  // Load existing messages or start fresh
   useEffect(() => {
-    if (hasSentGreeting.current) return;
-    hasSentGreeting.current = true;
-    sendMessage("Hi! I'm ready to set up my meal prep profile.", true);
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data } = await supabase
+          .from("onboarding_messages")
+          .select("role, content")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
+
+        if (data && data.length > 0) {
+          const restored = data as ChatMessageType[];
+          setMessages(restored);
+
+          // Re-extract profileData from the last assistant message
+          const lastAssistant = [...restored].reverse().find(m => m.role === "assistant");
+          if (lastAssistant) {
+            const extracted = extractJsonFromMessage(lastAssistant.content);
+            if (extracted && extracted.cooking_skill) {
+              setProfileData(extracted);
+            }
+          }
+
+          setIsInitializing(false);
+          return;
+        }
+      }
+
+      // No existing messages — start fresh
+      setIsInitializing(false);
+      sendMessage("Hi! I'm ready to set up my meal prep profile.", true);
+    }
+
+    init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -37,6 +86,13 @@ export function ChatWindow() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  // Refocus input after streaming completes
+  useEffect(() => {
+    if (!isStreaming && !isInitializing && !profileData) {
+      inputRef.current?.focus();
+    }
+  }, [isStreaming, isInitializing, profileData]);
 
   async function sendMessage(text: string, isInitial = false) {
     const userMessage: ChatMessageType = { role: "user", content: text };
@@ -49,6 +105,9 @@ export function ChatWindow() {
     }
     setInput("");
     setIsStreaming(true);
+
+    // Persist user message
+    persistMessage("user", text);
 
     try {
       const response = await fetch("/api/chat", {
@@ -87,6 +146,9 @@ export function ChatWindow() {
           });
         }
       }
+
+      // Persist completed assistant message
+      persistMessage("assistant", assistantContent);
 
       // Check if the response contains a JSON profile
       const extracted = extractJsonFromMessage(assistantContent);
@@ -137,6 +199,12 @@ export function ChatWindow() {
 
       if (error) throw error;
 
+      // Clean up onboarding messages
+      await supabase
+        .from("onboarding_messages")
+        .delete()
+        .eq("user_id", user.id);
+
       // Trigger initial recipe generation in the background
       fetch("/api/recipes/generate", { method: "POST" }).catch(() => {});
 
@@ -153,6 +221,14 @@ export function ChatWindow() {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
     sendMessage(input.trim());
+  }
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <Loader2 className="h-6 w-6 text-emerald-600 animate-spin" />
+      </div>
+    );
   }
 
   return (

@@ -238,7 +238,17 @@ export function SettingsView() {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => router.push("/onboarding")}
+            onClick={async () => {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await Promise.all([
+                  supabase.from("onboarding_messages").delete().eq("user_id", user.id),
+                  supabase.from("profiles").update({ onboarding_complete: false }).eq("id", user.id),
+                ]);
+              }
+              router.push("/onboarding");
+              router.refresh();
+            }}
           >
             <RotateCcw className="h-4 w-4 mr-1" />
             Redo onboarding

@@ -77,7 +77,17 @@ create table public.shopping_list_items (
   created_at timestamptz default now()
 );
 
+-- Onboarding chat messages (persisted during onboarding flow)
+create table public.onboarding_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  role text not null check (role in ('user', 'assistant')),
+  content text not null,
+  created_at timestamptz default now()
+);
+
 -- Indexes for performance
+create index idx_onboarding_messages_user_id on public.onboarding_messages(user_id);
 create index idx_recipes_user_id on public.recipes(user_id);
 create index idx_recipes_batch_id on public.recipes(batch_id);
 create index idx_swipes_user_id on public.swipes(user_id);
@@ -91,6 +101,7 @@ alter table public.recipes enable row level security;
 alter table public.swipes enable row level security;
 alter table public.meal_plan_items enable row level security;
 alter table public.shopping_list_items enable row level security;
+alter table public.onboarding_messages enable row level security;
 
 -- RLS Policies: users can only access their own data
 create policy "Users can view own profile" on public.profiles for select using (auth.uid() = id);
@@ -112,6 +123,10 @@ create policy "Users can view own shopping list" on public.shopping_list_items f
 create policy "Users can insert own shopping list" on public.shopping_list_items for insert with check (auth.uid() = user_id);
 create policy "Users can update own shopping list" on public.shopping_list_items for update using (auth.uid() = user_id);
 create policy "Users can delete own shopping list" on public.shopping_list_items for delete using (auth.uid() = user_id);
+
+create policy "Users can view own onboarding messages" on public.onboarding_messages for select using (auth.uid() = user_id);
+create policy "Users can insert own onboarding messages" on public.onboarding_messages for insert with check (auth.uid() = user_id);
+create policy "Users can delete own onboarding messages" on public.onboarding_messages for delete using (auth.uid() = user_id);
 
 -- Trigger: auto-create profile on user signup
 create or replace function public.handle_new_user()

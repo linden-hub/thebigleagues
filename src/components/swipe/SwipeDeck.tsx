@@ -5,10 +5,10 @@ import { AnimatePresence } from "framer-motion";
 import { SwipeCard } from "./SwipeCard";
 import { Button } from "@/components/ui/Button";
 import { useRecipes } from "@/hooks/useRecipes";
-import { X, Heart, Loader2, RefreshCw } from "lucide-react";
+import { X, Heart, Loader2, RefreshCw, AlertCircle } from "lucide-react";
 
 export function SwipeDeck() {
-  const { recipes, loading, generating, handleSwipe, generateBatch } =
+  const { recipes, loading, generating, error, handleSwipe, generateBatch } =
     useRecipes();
 
   const topRecipe = recipes[0];
@@ -53,6 +53,24 @@ export function SwipeDeck() {
             This takes about 10-15 seconds
           </span>
         </p>
+      </div>
+    );
+  }
+
+  if (error && recipes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <AlertCircle className="h-8 w-8 text-red-400" />
+        <div className="text-center">
+          <p className="text-gray-700 font-medium">Couldn&apos;t generate recipes</p>
+          <p className="text-sm text-gray-500 mt-1">
+            The AI service is temporarily overloaded. This usually resolves in a few seconds.
+          </p>
+        </div>
+        <Button onClick={generateBatch} loading={generating}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Try again
+        </Button>
       </div>
     );
   }

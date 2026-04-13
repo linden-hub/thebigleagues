@@ -20,12 +20,8 @@ export function OnboardingShell() {
         return;
       }
 
-      // Auto-create an anonymous account
-      const id = crypto.randomUUID();
-      const { error } = await supabase.auth.signUp({
-        email: `demo-${id}@platemate.app`,
-        password: crypto.randomUUID(),
-      });
+      // Auto-create an anonymous account (persists across reloads)
+      const { error } = await supabase.auth.signInAnonymously();
 
       if (error) {
         console.error("Auto-signup failed:", error);
