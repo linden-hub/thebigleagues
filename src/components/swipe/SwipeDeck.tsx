@@ -90,7 +90,7 @@ export function SwipeDeck() {
   return (
     <div className="flex flex-col items-center gap-5">
       {/* Card stack */}
-      <div className="relative w-full max-w-sm md:max-w-lg h-[540px] mx-4">
+      <div className="relative w-full max-w-sm md:max-w-4xl h-[540px] mx-4">
         <AnimatePresence>
           {nextRecipe && (
             <motion.div
@@ -121,20 +121,30 @@ export function SwipeDeck() {
 
       {/* Action buttons */}
       <div className="flex items-center gap-5">
-        <button
-          onClick={() => onSwipe("left")}
-          aria-label="Skip recipe"
-          className="w-16 h-16 rounded-full bg-white shadow-lg shadow-red-100 flex items-center justify-center text-red-500 hover:bg-red-50 active:scale-95 transition-all"
-        >
-          <X className="h-7 w-7" />
-        </button>
-        <button
-          onClick={() => onSwipe("right")}
-          aria-label="Add recipe to meal plan"
-          className="w-16 h-16 rounded-full bg-white shadow-lg shadow-emerald-100 flex items-center justify-center text-emerald-500 hover:bg-emerald-50 active:scale-95 transition-all"
-        >
-          <Heart className="h-7 w-7" />
-        </button>
+        <div className="flex flex-col items-center gap-1.5">
+          <button
+            onClick={() => onSwipe("left")}
+            aria-label="Skip recipe"
+            className="w-16 h-16 rounded-full bg-white shadow-lg shadow-red-100 flex items-center justify-center text-red-500 hover:bg-red-50 active:scale-95 transition-all"
+          >
+            <X className="h-7 w-7" />
+          </button>
+          <span className="hidden md:block text-xs text-gray-400">
+            &larr; Skip
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-1.5">
+          <button
+            onClick={() => onSwipe("right")}
+            aria-label="Add recipe to meal plan"
+            className="w-16 h-16 rounded-full bg-white shadow-lg shadow-emerald-100 flex items-center justify-center text-emerald-500 hover:bg-emerald-50 active:scale-95 transition-all"
+          >
+            <Heart className="h-7 w-7" />
+          </button>
+          <span className="hidden md:block text-xs text-gray-400">
+            Add &rarr;
+          </span>
+        </div>
       </div>
 
       {/* Generating indicator */}

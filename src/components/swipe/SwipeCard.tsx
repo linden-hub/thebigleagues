@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Clock, Flame, DollarSign } from "lucide-react";
+import { Clock, Flame, DollarSign, Users, ListChecks } from "lucide-react";
 import type { Recipe } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -160,7 +160,7 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
       exit={{ x: x.get() > 0 ? 300 : -300, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
-      <div className="rounded-3xl overflow-hidden h-full flex flex-col cursor-grab shadow-xl">
+      <div className="rounded-3xl overflow-hidden h-full flex flex-col md:flex-row cursor-grab shadow-xl">
         {/* Swipe overlays */}
         <motion.div
           className="absolute inset-0 bg-emerald-500/20 rounded-3xl z-10 flex items-center justify-center pointer-events-none"
@@ -181,7 +181,7 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
 
         {/* Hero zone with gradient */}
         <div
-          className="relative flex-shrink-0 h-[200px] flex items-center justify-center"
+          className="relative flex-shrink-0 h-[200px] md:h-full md:w-[280px] flex items-center justify-center"
           style={{
             background: `linear-gradient(135deg, ${theme.gradientFrom}, ${theme.gradientTo})`,
           }}
@@ -192,7 +192,7 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
           </span>
 
           {/* Emoji circle */}
-          <div className="bg-white/20 backdrop-blur-sm rounded-full w-20 h-20 flex items-center justify-center text-5xl">
+          <div className="bg-white/20 backdrop-blur-sm rounded-full w-20 h-20 md:w-24 md:h-24 flex items-center justify-center text-5xl md:text-6xl">
             {theme.emoji}
           </div>
 
@@ -205,14 +205,14 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
         </div>
 
         {/* Content zone */}
-        <div className="bg-white flex flex-col flex-1 px-5 pt-4 pb-5">
+        <div className="bg-white flex flex-col flex-1 px-5 pt-4 pb-5 md:overflow-y-auto md:py-5 md:px-6">
           {/* Description */}
-          <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
+          <p className="text-sm text-gray-500 line-clamp-2 md:line-clamp-none leading-relaxed">
             {recipe.description}
           </p>
 
           {/* Stat pills */}
-          <div className="flex gap-2 mt-4">
+          <div className="flex flex-wrap gap-2 mt-4">
             <div className="flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1.5">
               <Clock className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">
@@ -229,6 +229,18 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
               <DollarSign className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">
                 {formatCurrency(recipe.cost_per_serving)}
+              </span>
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1.5">
+              <Users className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">
+                {recipe.servings} serving{recipe.servings !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="hidden md:flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1.5">
+              <ListChecks className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">
+                {recipe.instructions.length} steps
               </span>
             </div>
           </div>
@@ -265,8 +277,28 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
             </div>
           </div>
 
+          {/* Ingredients preview - desktop only */}
+          {recipe.ingredients.length > 0 && (
+            <div className="hidden md:block mt-4">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Ingredients ({recipe.ingredients.length})
+              </h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {recipe.ingredients.map((ing, i) => (
+                  <span key={i} className="text-xs text-gray-600 truncate">
+                    <span className="text-gray-400">
+                      {ing.amount}
+                      {ing.unit ? ` ${ing.unit}` : ""}
+                    </span>{" "}
+                    {ing.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Cuisine tag at bottom */}
-          <div className="mt-auto pt-3">
+          <div className="mt-auto pt-3 md:mt-4">
             <span
               className={`${theme.accentBg} ${theme.accentText} text-xs font-semibold px-3 py-1 rounded-full`}
             >

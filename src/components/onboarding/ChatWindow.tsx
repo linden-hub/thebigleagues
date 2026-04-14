@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ChatMessage } from "./ChatMessage";
 import { Button } from "@/components/ui/Button";
 import { extractJsonFromMessage } from "@/lib/utils";
-import { Send, Loader2, Check, RotateCcw } from "lucide-react";
+import { Send, Loader2, Check, RotateCcw, SkipForward } from "lucide-react";
 import type { ChatMessage as ChatMessageType } from "@/lib/types";
 
 export function ChatWindow() {
@@ -21,6 +21,7 @@ export function ChatWindow() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [profileData, setProfileData] = useState<Record<string, unknown> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSkipping, setIsSkipping] = useState(false);
   const hasInitialized = useRef(false);
 
   // Persist a single message to Supabase (fire-and-forget)
@@ -218,6 +219,36 @@ export function ChatWindow() {
     }
   }
 
+  async function handleSkip() {
+    setIsSkipping(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ onboarding_complete: true })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      await supabase
+        .from("onboarding_messages")
+        .delete()
+        .eq("user_id", user.id);
+
+      fetch("/api/recipes/generate", { method: "POST" }).catch(() => {});
+
+      router.push("/app");
+      router.refresh();
+    } catch (error) {
+      console.error("Skip onboarding error:", error);
+      setIsSkipping(false);
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
@@ -317,23 +348,40 @@ export function ChatWindow() {
 
       {/* Input */}
       {!profileData && (
-        <form
-          onSubmit={handleSubmit}
-          className="flex gap-2 p-4 border-t border-gray-200 bg-white"
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your response..."
-            className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            disabled={isStreaming}
-          />
-          <Button type="submit" disabled={!input.trim() || isStreaming}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+        <div className="border-t border-gray-200 bg-white">
+          <form
+            onSubmit={handleSubmit}
+            className="flex gap-2 p-4 pb-2"
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your response..."
+              className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              disabled={isStreaming}
+            />
+            <Button type="submit" disabled={!input.trim() || isStreaming}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+          <div className="flex justify-end px-4 pb-3">
+            <button
+              type="button"
+              onClick={handleSkip}
+              disabled={isSkipping}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            >
+              {isSkipping ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <SkipForward className="h-3.5 w-3.5" />
+              )}
+              Skip this step
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
