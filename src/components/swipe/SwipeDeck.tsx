@@ -88,7 +88,7 @@ export function SwipeDeck() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex flex-col items-center gap-5 w-full">
       {/* Card stack */}
       <div className="relative w-full max-w-sm md:max-w-4xl h-[540px] mx-4">
         <AnimatePresence>
