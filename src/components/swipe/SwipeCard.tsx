@@ -4,6 +4,7 @@ import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Clock, Flame, DollarSign, Users, ListChecks } from "lucide-react";
 import type { Recipe } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { useTrackpadSwipe } from "@/hooks/useTrackpadSwipe";
 
 interface CuisineTheme {
   emoji: string;
@@ -128,6 +129,8 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
   const likeOpacity = useTransform(x, [0, 100], [0, 1]);
   const skipOpacity = useTransform(x, [-100, 0], [1, 0]);
 
+  const { ref: cardRef } = useTrackpadSwipe({ x, enabled: isTop, onSwipe });
+
   const theme = getCuisineTheme(recipe.cuisine);
 
   const totalMacroCals =
@@ -150,6 +153,7 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
 
   return (
     <motion.div
+      ref={cardRef}
       className="absolute inset-0"
       style={{ x, rotate, zIndex: isTop ? 10 : 0 }}
       drag={isTop ? "x" : false}
