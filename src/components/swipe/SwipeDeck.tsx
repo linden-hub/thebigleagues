@@ -98,6 +98,8 @@ export function SwipeDeck() {
               className="absolute inset-0"
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 0.95, y: 10 }}
+              exit={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
               style={{ zIndex: 0 }}
             >
               <SwipeCard
@@ -109,12 +111,22 @@ export function SwipeDeck() {
             </motion.div>
           )}
           {topRecipe && (
-            <SwipeCard
-              key={topRecipe.id}
-              recipe={topRecipe}
-              onSwipe={onSwipe}
-              isTop={true}
-            />
+            <motion.div
+              key={`top-${topRecipe.id}`}
+              className="absolute inset-0"
+              initial={{ scale: 1, y: 0 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              style={{ zIndex: 10 }}
+            >
+              <SwipeCard
+                key={topRecipe.id}
+                recipe={topRecipe}
+                onSwipe={onSwipe}
+                isTop={true}
+              />
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

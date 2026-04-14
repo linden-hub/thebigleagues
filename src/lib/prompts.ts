@@ -110,13 +110,15 @@ RULES:
 - Adjust quantities for household size of ${householdSize}
 - Categorize every item into one of: produce, dairy, protein, pantry, frozen, other
 - Use common grocery store units (lbs, oz, count, etc.)
+- Estimate realistic US grocery prices for each ingredient (typical grocery store prices)
 
 Return a JSON array:
 [
   {
     "ingredient_name": "string",
     "amount": "string (e.g., '2 lbs', '1 dozen', '16 oz')",
-    "category": "produce|dairy|protein|pantry|frozen|other"
+    "category": "produce|dairy|protein|pantry|frozen|other",
+    "price": number (estimated price in USD for the amount specified, e.g., 3.99)
   }
 ]`;
 }

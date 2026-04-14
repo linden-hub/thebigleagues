@@ -83,18 +83,14 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     let onboardingComplete = false;
     try {
-      const result = await withTimeout(
-        Promise.resolve(
-          supabase
-            .from("profiles")
-            .select("onboarding_complete")
-            .eq("id", user.id)
-            .maybeSingle()
-        ),
-        SUPABASE_TIMEOUT_MS
-      );
-      onboardingComplete = result.data?.onboarding_complete ?? false;
-    } catch {
+      const { data } = await supabase
+        .from("profiles")
+        .select("onboarding_complete")
+        .eq("id", user.id)
+        .maybeSingle();
+      onboardingComplete = data?.onboarding_complete ?? false;
+    } catch (err) {
+      console.error("Failed to check onboarding status:", err);
       return supabaseResponse;
     }
 

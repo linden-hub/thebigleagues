@@ -69,6 +69,7 @@ export interface ShoppingListItem {
   week_start: string;
   ingredient_name: string;
   amount: string;
+  price?: number;
   category: string;
   checked: boolean;
   created_at: string;

@@ -8,8 +8,7 @@ import { useTrackpadSwipe } from "@/hooks/useTrackpadSwipe";
 
 interface CuisineTheme {
   emoji: string;
-  gradientFrom: string;
-  gradientTo: string;
+  color: string;
   accentBg: string;
   accentText: string;
 }
@@ -17,85 +16,73 @@ interface CuisineTheme {
 const CUISINE_THEMES: Record<string, CuisineTheme> = {
   thai: {
     emoji: "\u{1F35C}",
-    gradientFrom: "#fbbf24",
-    gradientTo: "#f97316",
+    color: "#fbbf24",
     accentBg: "bg-amber-50",
     accentText: "text-amber-700",
   },
   italian: {
     emoji: "\u{1F35D}",
-    gradientFrom: "#f87171",
-    gradientTo: "#f43f5e",
+    color: "#f87171",
     accentBg: "bg-rose-50",
     accentText: "text-rose-700",
   },
   mexican: {
     emoji: "\u{1F32E}",
-    gradientFrom: "#a3e635",
-    gradientTo: "#10b981",
+    color: "#a3e635",
     accentBg: "bg-lime-50",
     accentText: "text-lime-700",
   },
   japanese: {
     emoji: "\u{1F371}",
-    gradientFrom: "#f472b6",
-    gradientTo: "#d946ef",
+    color: "#f472b6",
     accentBg: "bg-pink-50",
     accentText: "text-pink-700",
   },
   indian: {
     emoji: "\u{1F35B}",
-    gradientFrom: "#facc15",
-    gradientTo: "#f97316",
+    color: "#facc15",
     accentBg: "bg-yellow-50",
     accentText: "text-yellow-700",
   },
   chinese: {
     emoji: "\u{1F961}",
-    gradientFrom: "#ef4444",
-    gradientTo: "#fbbf24",
+    color: "#ef4444",
     accentBg: "bg-red-50",
     accentText: "text-red-700",
   },
   mediterranean: {
     emoji: "\u{1FAD2}",
-    gradientFrom: "#38bdf8",
-    gradientTo: "#3b82f6",
+    color: "#38bdf8",
     accentBg: "bg-sky-50",
     accentText: "text-sky-700",
   },
   korean: {
     emoji: "\u{1F958}",
-    gradientFrom: "#fb7185",
-    gradientTo: "#ef4444",
+    color: "#fb7185",
     accentBg: "bg-rose-50",
     accentText: "text-rose-700",
   },
   american: {
     emoji: "\u{1F354}",
-    gradientFrom: "#60a5fa",
-    gradientTo: "#6366f1",
+    color: "#60a5fa",
     accentBg: "bg-blue-50",
     accentText: "text-blue-700",
   },
   french: {
     emoji: "\u{1F950}",
-    gradientFrom: "#a78bfa",
-    gradientTo: "#a855f7",
+    color: "#a78bfa",
     accentBg: "bg-violet-50",
     accentText: "text-violet-700",
   },
   vietnamese: {
     emoji: "\u{1F372}",
-    gradientFrom: "#2dd4bf",
-    gradientTo: "#06b6d4",
+    color: "#2dd4bf",
     accentBg: "bg-teal-50",
     accentText: "text-teal-700",
   },
   greek: {
     emoji: "\u{1F957}",
-    gradientFrom: "#22d3ee",
-    gradientTo: "#3b82f6",
+    color: "#22d3ee",
     accentBg: "bg-cyan-50",
     accentText: "text-cyan-700",
   },
@@ -103,8 +90,7 @@ const CUISINE_THEMES: Record<string, CuisineTheme> = {
 
 const DEFAULT_THEME: CuisineTheme = {
   emoji: "\u{1F37D}\u{FE0F}",
-  gradientFrom: "#34d399",
-  gradientTo: "#14b8a6",
+  color: "#34d399",
   accentBg: "bg-emerald-50",
   accentText: "text-emerald-700",
 };
@@ -144,9 +130,15 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
     info: { offset: { x: number }; velocity: { x: number } }
   ) {
     const threshold = 100;
-    if (info.offset.x > threshold || info.velocity.x > 500) {
+    const xValue = info.offset.x;
+    
+    if (xValue > threshold || info.velocity.x > 500) {
+      // Animate to right, then trigger callback
+      x.set(300);
       onSwipe("right");
-    } else if (info.offset.x < -threshold || info.velocity.x < -500) {
+    } else if (xValue < -threshold || info.velocity.x < -500) {
+      // Animate to left, then trigger callback
+      x.set(-300);
       onSwipe("left");
     }
   }
@@ -155,13 +147,16 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
     <motion.div
       ref={cardRef}
       className="absolute inset-0"
-      style={{ x, rotate, zIndex: isTop ? 10 : 0 }}
+      style={{ x, rotate }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.7}
       onDragEnd={handleDragEnd}
       whileDrag={{ cursor: "grabbing" }}
-      exit={{ x: x.get() > 0 ? 300 : -300, opacity: 0 }}
+      exit={{
+        opacity: 0,
+        transition: { duration: 0.2 },
+      }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
       <div className="rounded-3xl overflow-hidden h-full flex flex-col md:flex-row cursor-grab shadow-xl">
@@ -183,11 +178,11 @@ export function SwipeCard({ recipe, onSwipe, isTop }: SwipeCardProps) {
           </div>
         </motion.div>
 
-        {/* Hero zone with gradient */}
+        {/* Hero zone with solid color */}
         <div
           className="relative flex-shrink-0 h-[200px] md:h-full md:w-[280px] flex items-center justify-center"
           style={{
-            background: `linear-gradient(135deg, ${theme.gradientFrom}, ${theme.gradientTo})`,
+            backgroundColor: theme.color,
           }}
         >
           {/* Difficulty badge */}

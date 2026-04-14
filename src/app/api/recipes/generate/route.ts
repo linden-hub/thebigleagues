@@ -25,7 +25,7 @@ export async function POST() {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  // Fetch swipe history for personalization
+  // Fetch swipe history for personalization (optimized: single batched query)
   const { data: swipes } = await supabase
     .from("swipes")
     .select("direction, recipe_id")
@@ -41,22 +41,26 @@ export async function POST() {
       .filter((s) => s.direction === "left")
       .map((s) => s.recipe_id);
 
-    // Get recipe titles for context
-    const { data: likedRecipes } = await supabase
-      .from("recipes")
-      .select("title, cuisine")
-      .in("id", likedIds.length > 0 ? likedIds : ["none"]);
+    // Get recipe titles for context (single batched query)
+    const allIds = [...new Set([...likedIds, ...dislikedIds])];
+    const { data: allRecipes } = allIds.length > 0
+      ? await supabase
+          .from("recipes")
+          .select("id, title, cuisine")
+          .in("id", allIds)
+      : { data: [] };
 
-    const { data: dislikedRecipes } = await supabase
-      .from("recipes")
-      .select("title, cuisine")
-      .in("id", dislikedIds.length > 0 ? dislikedIds : ["none"]);
+    const recipeMap = (allRecipes || []).reduce(
+      (acc, r) => {
+        acc[r.id] = `${r.title} (${r.cuisine})`;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
 
     swipeHistory = {
-      liked: (likedRecipes || []).map((r) => `${r.title} (${r.cuisine})`),
-      disliked: (dislikedRecipes || []).map(
-        (r) => `${r.title} (${r.cuisine})`
-      ),
+      liked: likedIds.map((id) => recipeMap[id]).filter(Boolean),
+      disliked: dislikedIds.map((id) => recipeMap[id]).filter(Boolean),
     };
   }
 
@@ -64,34 +68,28 @@ export async function POST() {
   const prompt = buildRecipeGenerationPrompt(profile, swipeHistory);
 
   try {
-    let text: string;
+    let text: string = "";
 
     const models = [geminiModelJSON, geminiModelJSONFallback];
-    const maxRetries = 3;
     let lastError: unknown;
 
-    outer: {
-      for (const model of models) {
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-          try {
-            const result = await model.generateContent(prompt);
-            text = result.response.text();
-            break outer;
-          } catch (err) {
-            lastError = err;
-            const msg = err instanceof Error ? err.message : String(err);
-            const isRetryable = msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded") || msg.includes("429");
-            if (!isRetryable) throw err;
-            console.warn(`Model attempt ${attempt + 1} failed (retryable), waiting before retry...`);
-            if (attempt < maxRetries - 1) {
-              await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
-            }
-          }
-        }
+    for (const model of models) {
+      try {
+        // Single attempt per model with quick fallback
+        const result = await model.generateContent(prompt);
+        text = result.response.text();
+        break;
+      } catch (err) {
+        lastError = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        const isRetryable = msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded") || msg.includes("429");
+        if (!isRetryable) throw err;
+        console.warn(`Model failed, trying fallback...`, msg);
+        // Continue to next model
       }
-      // All retries exhausted
-      throw lastError;
     }
+    // All models exhausted
+    if (!text) throw lastError;
     const recipes: GeneratedRecipe[] = JSON.parse(text);
 
     // Generate a batch ID

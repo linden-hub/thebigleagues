@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  // Get all recipes in the meal plan for this week
+// Get all recipe ingredients for this week (optimized: only fetch needed fields)
   const { data: planItems } = await supabase
     .from("meal_plan_items")
-    .select("recipe:recipes(*)")
+    .select("recipe:recipes(title, ingredients, servings)")
     .eq("user_id", user.id)
     .eq("week_start", weekStart);
 
@@ -53,19 +53,21 @@ export async function POST(req: NextRequest) {
   try {
     let text: string;
     try {
+      // Try primary model (flash) first - much faster
       const result = await geminiModelJSON.generateContent(prompt);
       text = result.response.text();
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded")) {
-        console.warn("Primary model unavailable, falling back to gemini-2.5-flash");
+      const isRetryable = msg.includes("503") || msg.includes("Service Unavailable") || msg.includes("overloaded") || msg.includes("429");
+      if (isRetryable) {
+        console.warn("Primary model unavailable, using fallback...");
         const result = await geminiModelJSONFallback.generateContent(prompt);
         text = result.response.text();
       } else {
         throw error;
       }
     }
-    const items: { ingredient_name: string; amount: string; category: string }[] =
+    const items: { ingredient_name: string; amount: string; category: string; price?: number }[] =
       JSON.parse(text);
 
     // Clear existing shopping list for this week
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
       week_start: weekStart,
       ingredient_name: item.ingredient_name,
       amount: item.amount,
+      price: item.price || null,
       category: item.category,
       checked: false,
     }));

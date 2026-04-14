@@ -12,6 +12,7 @@ import {
   Loader2,
   Check,
   MapPin,
+  X,
 } from "lucide-react";
 import type { ShoppingListItem, Profile } from "@/lib/types";
 
@@ -103,6 +104,11 @@ export function ShoppingListView() {
     }
   }
 
+  async function deleteItem(itemId: string) {
+    setItems((prev) => prev.filter((item) => item.id !== itemId));
+    await supabase.from("shopping_list_items").delete().eq("id", itemId);
+  }
+
   // Group by category
   const grouped = CATEGORY_ORDER.reduce(
     (acc, category) => {
@@ -130,10 +136,10 @@ export function ShoppingListView() {
             })}
           </p>
         </div>
-        <Button onClick={generateList} loading={generating} size="sm">
+        {/* <Button onClick={generateList} loading={generating} size="sm">
           <RefreshCw className="h-4 w-4 mr-1" />
-          {items.length > 0 ? "Regenerate" : "Generate"}
-        </Button>
+          {items.length > 0 ? "Regenerate" : "Generate"} */}
+        {/* </Button> */}
       </div>
 
       {/* Preferred stores */}
@@ -159,7 +165,7 @@ export function ShoppingListView() {
             Add meals to your plan, then generate your shopping list
           </p>
           <Button onClick={generateList} loading={generating}>
-            Generate shopping list
+            Send ingredients to shopping list
           </Button>
         </Card>
       ) : (
@@ -191,44 +197,67 @@ export function ShoppingListView() {
                 </h3>
                 <Card className="divide-y divide-gray-100">
                   {categoryItems.map((item) => (
-                    <button
+                    <div
                       key={item.id}
-                      onClick={() => toggleItem(item.id)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 w-full px-4 py-3 hover:bg-gray-50 transition-colors group"
                     >
-                      <div
-                        className={cn(
-                          "w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors",
-                          item.checked
-                            ? "bg-emerald-500 border-emerald-500"
-                            : "border-gray-300"
-                        )}
+                      <button
+                        onClick={() => toggleItem(item.id)}
+                        className="flex items-center gap-3 flex-1 text-left"
                       >
-                        {item.checked && (
-                          <Check className="h-3 w-3 text-white" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span
+                        <div
                           className={cn(
-                            "text-sm transition-colors",
+                            "w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors",
                             item.checked
-                              ? "text-gray-400 line-through"
-                              : "text-gray-900"
+                              ? "bg-emerald-500 border-emerald-500"
+                              : "border-gray-300"
                           )}
                         >
-                          {item.ingredient_name}
+                          {item.checked && (
+                            <Check className="h-3 w-3 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span
+                            className={cn(
+                              "text-sm transition-colors",
+                              item.checked
+                                ? "text-gray-400 line-through"
+                                : "text-gray-900"
+                            )}
+                          >
+                            {item.ingredient_name}
+                          </span>
+                        </div>
+                        <span
+                          className={cn(
+                            "text-xs flex-shrink-0",
+                            item.checked ? "text-gray-300" : "text-gray-500"
+                          )}
+                        >
+                          {item.amount}
                         </span>
-                      </div>
-                      <span
-                        className={cn(
-                          "text-xs flex-shrink-0",
-                          item.checked ? "text-gray-300" : "text-gray-500"
+                      </button>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {item.price && (
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              item.checked ? "text-gray-300" : "text-gray-900"
+                            )}
+                          >
+                            ${item.price.toFixed(2)}
+                          </span>
                         )}
-                      >
-                        {item.amount}
-                      </span>
-                    </button>
+                        <button
+                          onClick={() => deleteItem(item.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete item"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </Card>
               </div>

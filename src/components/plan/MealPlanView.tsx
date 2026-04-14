@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getWeekStart, formatCurrency } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { RecipeDetailModal } from "@/components/plan/RecipeDetailModal";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,7 +13,7 @@ import {
   Loader2,
   CalendarDays,
 } from "lucide-react";
-import type { MealPlanItem } from "@/lib/types";
+import type { MealPlanItem, Recipe } from "@/lib/types";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MEAL_TYPES = ["breakfast", "lunch", "dinner"] as const;
@@ -27,6 +28,8 @@ export function MealPlanView() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [items, setItems] = useState<MealPlanItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const weekStart = getWeekStartWithOffset(weekOffset);
 
@@ -56,8 +59,26 @@ export function MealPlanView() {
     await supabase.from("meal_plan_items").delete().eq("id", itemId);
   }
 
-  // Calculate totals
-  const totals = items.reduce(
+  function handleRecipeClick(recipe: Recipe) {
+    setSelectedRecipe(recipe);
+    setIsModalOpen(true);
+  }
+
+  function handleModalClose() {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedRecipe(null), 300);
+  }
+
+  async function handleRecipeRemove(recipeId: string) {
+    const itemToRemove = items.find((i) => i.recipe_id === recipeId);
+    if (itemToRemove) {
+      await removeItem(itemToRemove.id);
+      handleModalClose();
+    }
+  }
+
+  // Calculate avgs
+  const avgs = items.reduce(
     (acc, item) => {
       if (item.recipe) {
         acc.calories += item.recipe.calories || 0;
@@ -66,7 +87,7 @@ export function MealPlanView() {
         acc.fat += item.recipe.fat || 0;
         acc.cost += item.recipe.cost_per_serving || 0;
       }
-      return acc;
+      return acc; // Average per meal
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0, cost: 0 }
   );
@@ -118,21 +139,21 @@ export function MealPlanView() {
           <div>
             <div className="text-gray-400">Calories</div>
             <div className="font-bold text-gray-900">
-              {totals.calories.toLocaleString()}
+              {avgs.calories.toLocaleString()}
             </div>
           </div>
           <div>
             <div className="text-gray-400">Protein</div>
-            <div className="font-bold text-gray-900">{totals.protein}g</div>
+            <div className="font-bold text-gray-900">{avgs.protein}g</div>
           </div>
           <div>
             <div className="text-gray-400">Carbs</div>
-            <div className="font-bold text-gray-900">{totals.carbs}g</div>
+            <div className="font-bold text-gray-900">{avgs.carbs}g</div>
           </div>
           <div>
             <div className="text-gray-400">Est. Cost</div>
             <div className="font-bold text-gray-900">
-              {formatCurrency(totals.cost)}
+              {formatCurrency(avgs.cost)}
             </div>
           </div>
         </div>
@@ -174,7 +195,8 @@ export function MealPlanView() {
                       return (
                         <td key={dayIdx} className="px-1 py-1">
                           {item?.recipe ? (
-                            <div className="bg-white border border-gray-200 rounded-xl p-2 text-xs group relative">
+                            <div className="bg-white border border-gray-200 rounded-xl p-2 text-xs group relative cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all"
+                              onClick={() => handleRecipeClick(item.recipe!)}>
                               <div className="font-medium text-gray-900 truncate">
                                 {item.recipe.title}
                               </div>
@@ -182,7 +204,10 @@ export function MealPlanView() {
                                 {item.recipe.calories} cal
                               </div>
                               <button
-                                onClick={() => removeItem(item.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeItem(item.id);
+                                }}
                                 className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition-opacity"
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -212,7 +237,7 @@ export function MealPlanView() {
                   {dayItems.length > 0 ? (
                     <div className="space-y-2">
                       {dayItems.map((item) => (
-                        <Card key={item.id} className="p-3 flex items-center justify-between">
+                        <div key={item.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 flex items-center justify-between cursor-pointer hover:shadow-md hover:border-emerald-200 transition-all" onClick={() => item.recipe && handleRecipeClick(item.recipe)}>
                           <div>
                             <div className="text-xs text-gray-400 uppercase">
                               {item.meal_type}
@@ -226,12 +251,15 @@ export function MealPlanView() {
                             </div>
                           </div>
                           <button
-                            onClick={() => removeItem(item.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeItem(item.id);
+                            }}
                             className="p-2 text-red-400 hover:text-red-600"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-                        </Card>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -246,6 +274,12 @@ export function MealPlanView() {
           </div>
         </>
       )}
+      <RecipeDetailModal
+        isOpen={isModalOpen}
+        recipe={selectedRecipe}
+        onClose={handleModalClose}
+        onRemove={handleRecipeRemove}
+      />
     </div>
   );
 }

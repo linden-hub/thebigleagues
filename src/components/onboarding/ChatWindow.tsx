@@ -22,6 +22,7 @@ export function ChatWindow() {
   const [profileData, setProfileData] = useState<Record<string, unknown> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const hasInitialized = useRef(false);
 
   // Persist a single message to Supabase (fire-and-forget)
@@ -175,12 +176,15 @@ export function ChatWindow() {
   async function handleSaveProfile() {
     if (!profileData) return;
     setIsSaving(true);
+    setSaveError(null);
 
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      console.log("Saving profile for user:", user.id);
 
       const { error } = await supabase
         .from("profiles")
@@ -199,21 +203,36 @@ export function ChatWindow() {
         })
         .eq("id", user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Profile update error:", error);
+        throw error;
+      }
+
+      console.log("Profile saved successfully");
 
       // Clean up onboarding messages
-      await supabase
+      const { error: deleteError } = await supabase
         .from("onboarding_messages")
         .delete()
         .eq("user_id", user.id);
 
-      // Trigger initial recipe generation in the background
-      fetch("/api/recipes/generate", { method: "POST" }).catch(() => {});
+      if (deleteError) {
+        console.error("Delete messages error:", deleteError);
+      }
 
+      // Trigger initial recipe generation in the background
+      console.log("Triggering recipe generation...");
+      fetch("/api/recipes/generate", { method: "POST" }).catch((err) => {
+        console.error("Recipe generation error:", err);
+      });
+
+      console.log("Navigating to /app...");
       router.push("/app");
       router.refresh();
     } catch (error) {
-      console.error("Save profile error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Save profile error:", errorMessage);
+      setSaveError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -221,6 +240,7 @@ export function ChatWindow() {
 
   async function handleSkip() {
     setIsSkipping(true);
+    setSaveError(null);
     try {
       const {
         data: { user },
@@ -245,6 +265,8 @@ export function ChatWindow() {
       router.refresh();
     } catch (error) {
       console.error("Skip onboarding error:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setSaveError(errorMessage);
       setIsSkipping(false);
     }
   }
@@ -295,6 +317,12 @@ export function ChatWindow() {
       {/* Profile confirmation */}
       {profileData && (
         <div className="mx-4 mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
+          {saveError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs text-red-700 font-medium">Error saving profile:</p>
+              <p className="text-xs text-red-600 mt-1">{saveError}</p>
+            </div>
+          )}
           <p className="text-sm font-medium text-emerald-800 mb-3">
             Your profile is ready! Does this look right?
           </p>

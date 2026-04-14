@@ -72,6 +72,7 @@ create table public.shopping_list_items (
   week_start date not null,
   ingredient_name text not null,
   amount text,
+  price decimal(10, 2),
   category text default 'other' check (category in ('produce', 'dairy', 'protein', 'pantry', 'frozen', 'other')),
   checked boolean default false,
   created_at timestamptz default now()
@@ -102,6 +103,7 @@ alter table public.swipes enable row level security;
 alter table public.meal_plan_items enable row level security;
 alter table public.shopping_list_items enable row level security;
 alter table public.onboarding_messages enable row level security;
+alter table public.shopping_list_items ADD COLUMN price decimal(10, 2);
 
 -- RLS Policies: users can only access their own data
 create policy "Users can view own profile" on public.profiles for select using (auth.uid() = id);
